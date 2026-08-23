@@ -17,23 +17,18 @@
         <svg viewBox="0 0 100 100" width="28" height="28" fill="currentColor" style="color:#3479ff"><g><polygon points="44.154730,8.408741 45.048660,50.695866 54.951340,49.304134"></polygon><polygon points="60.488985,24.038852 45.827673,48.314270 54.172327,51.685730"></polygon><polygon points="75.455844,24.544156 46.464466,46.464466 53.535534,53.535534"></polygon><polygon points="78.190779,39.739396 48.460909,45.771383 51.539091,54.228617"></polygon><polygon points="93.832567,53.834853 50.435779,45.019027 49.564221,54.980973"></polygon><polygon points="72.516660,63.000000 52.000000,46.535898 48.000000,53.464102"></polygon><polygon points="70.136932,82.225828 54.240240,47.350404 45.759760,52.649596"></polygon><polygon points="52.788984,81.878230 54.482876,49.607799 45.517124,50.392201"></polygon><polygon points="34.951114,91.346475 54.698463,51.710101 45.301537,48.289899"></polygon><polygon points="30.678235,67.397396 52.676522,52.972579 47.323478,47.027421"></polygon><polygon points="15.761965,61.124612 51.545085,54.755283 48.454915,45.244717"></polygon><polygon points="20.291958,45.824807 49.373721,54.456206 50.626279,45.543794"></polygon><polygon points="23.787135,31.645554 47.418906,53.686184 52.581094,46.313816"></polygon><polygon points="33.095270,13.747689 45.468461,52.113091 54.531539,47.886909"></polygon><circle cx="50" cy="50" r="14"></circle></g></svg>
         <span class="logo-text"><span class="italic">PifPaf</span> <span class="brand">Creators</span></span>
       </a>
-      <div class="nav-actions">
-        <button class="btn btn-brand" onclick="showLogin()">Войти</button>
-      </div>
     </nav>
 
     <section class="hero">
       <div class="hero-content">
         <h1>Аналитика рилсов <span class="brand">в один клик</span></h1>
-        <p class="hero-sub">Личный кабинет для блоггеров PifPaf. Подтягивай просмотры, даты и обложки из Instagram автоматически — и следи за ростом в красивом дашборде.</p>
+        <p class="hero-sub">Аналитика для блоггеров PifPaf. Подтягивай просмотры, даты и обложки из Instagram автоматически — и следи за ростом в красивом дашборде.</p>
         <div class="hero-actions">
-          <button class="btn btn-brand btn-lg" onclick="showLogin()">Начать бесплатно</button>
-          <a href="#account" class="btn btn-ghost btn-lg">Подтянуть аккаунт</a>
+          <a href="#account" class="btn btn-brand btn-lg">Подтянуть аккаунт</a>
         </div>
         <div class="hero-badges">
           <span class="badge">⚡ Авто-обновление</span>
           <span class="badge">📊 Аналитика</span>
-          <span class="badge">🔒 Личный кабинет</span>
         </div>
       </div>
       <div class="hero-visual">
@@ -60,7 +55,6 @@
         <input type="text" id="import-url" placeholder="https://www.instagram.com/handle/" required>
         <button type="submit" class="btn btn-brand btn-lg">Подтянуть данные</button>
       </form>
-      <div class="modal-sub hint">Быстрый пример: <button type="button" class="link-chip" onclick="demoImport()">anna (демо)</button></div>
       <div id="import-loading" class="loading hidden">
         <span class="spinner"></span>
         <span>Подтягиваем рилсы из Instagram…</span>
@@ -101,123 +95,6 @@
       </div>
       <p>© 2026 PifPaf AI · дашборд для блоггеров</p>
     </footer>
-  </div>
-
-  <!-- ===== МОДАЛКА ВХОДА ===== -->
-  <div id="login-modal" class="modal hidden">
-    <div class="modal-card">
-      <button class="modal-close" onclick="closeLogin()">✕</button>
-      <h2>Вход в кабинет</h2>
-      <p class="modal-sub">Демо-аккаунты: <code>anna</code>, <code>misha</code>, <code>liza</code> · пароль <code>demo123</code></p>
-      <form id="login-form">
-        <label>Логин</label>
-        <input type="text" id="login-username" placeholder="anna" required>
-        <label>Пароль</label>
-        <input type="password" id="login-password" placeholder="demo123" required>
-        <button type="submit" class="btn btn-brand btn-block">Войти</button>
-        <p id="login-error" class="error hidden"></p>
-      </form>
-    </div>
-  </div>
-
-  <!-- ===== ДАШБОРД ===== -->
-  <div id="dashboard" class="dashboard hidden">
-    <aside class="sidebar">
-      <a class="logo" href="/">
-        <svg viewBox="0 0 100 100" width="28" height="28" fill="currentColor" style="color:#3479ff"><g><polygon points="44.154730,8.408741 45.048660,50.695866 54.951340,49.304134"></polygon><polygon points="60.488985,24.038852 45.827673,48.314270 54.172327,51.685730"></polygon><polygon points="75.455844,24.544156 46.464466,46.464466 53.535534,53.535534"></polygon><polygon points="78.190779,39.739396 48.460909,45.771383 51.539091,54.228617"></polygon><polygon points="93.832567,53.834853 50.435779,45.019027 49.564221,54.980973"></polygon><polygon points="72.516660,63.000000 52.000000,46.535898 48.000000,53.464102"></polygon><polygon points="70.136932,82.225828 54.240240,47.350404 45.759760,52.649596"></polygon><polygon points="52.788984,81.878230 54.482876,49.607799 45.517124,50.392201"></polygon><polygon points="34.951114,91.346475 54.698463,51.710101 45.301537,48.289899"></polygon><polygon points="30.678235,67.397396 52.676522,52.972579 47.323478,47.027421"></polygon><polygon points="15.761965,61.124612 51.545085,54.755283 48.454915,45.244717"></polygon><polygon points="20.291958,45.824807 49.373721,54.456206 50.626279,45.543794"></polygon><polygon points="23.787135,31.645554 47.418906,53.686184 52.581094,46.313816"></polygon><polygon points="33.095270,13.747689 45.468461,52.113091 54.531539,47.886909"></polygon><circle cx="50" cy="50" r="14"></circle></g></svg>
-        <span class="logo-text"><span class="italic">PifPaf</span> <span class="brand">Creators</span></span>
-      </a>
-      <nav class="side-nav">
-        <button class="side-link active" data-view="overview">📊 Обзор</button>
-        <button class="side-link" data-view="reels">🎬 Мои рилсы</button>
-        <button class="side-link" data-view="feed">🌐 Лента</button>
-      </nav>
-      <div class="sidebar-user">
-        <img id="dash-avatar" src="" alt="аватар">
-        <div>
-          <div id="dash-name" class="user-name"></div>
-          <div id="dash-instagram" class="user-instagram"></div>
-        </div>
-        <button class="logout-btn" onclick="logout()" title="Выйти">⎋</button>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="dash-header">
-        <div>
-          <h1 id="dash-title">Обзор</h1>
-          <p id="dash-greeting" class="dash-sub"></p>
-        </div>
-        <button class="btn btn-brand" onclick="openAddReel()">+ Добавить рилс</button>
-      </header>
-
-      <!-- Обзор -->
-      <section id="view-overview" class="view">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">👁️</div>
-            <div class="stat-value" id="stat-views">0</div>
-            <div class="stat-label">Всего просмотров</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">🎬</div>
-            <div class="stat-value" id="stat-reels">0</div>
-            <div class="stat-label">Рилсов</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">❤️</div>
-            <div class="stat-value" id="stat-likes">0</div>
-            <div class="stat-label">Лайков</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">📈</div>
-            <div class="stat-value" id="stat-avg">0</div>
-            <div class="stat-label">Средний охват</div>
-          </div>
-        </div>
-
-        <div class="chart-card">
-          <h3>Динамика просмотров</h3>
-          <canvas id="views-chart" height="220"></canvas>
-        </div>
-
-        <div class="best-card">
-          <h3>🏆 Лучший рилс</h3>
-          <div id="best-reel" class="best-reel"></div>
-        </div>
-      </section>
-
-      <!-- Мои рилсы -->
-      <section id="view-reels" class="view hidden">
-        <div id="my-reels" class="reels-grid"></div>
-      </section>
-
-      <!-- Лента -->
-      <section id="view-feed" class="view hidden">
-        <div id="dash-feed" class="feed-grid"></div>
-      </section>
-    </main>
-  </div>
-
-  <!-- ===== МОДАЛКА ДОБАВЛЕНИЯ РИЛСА ===== -->
-  <div id="add-modal" class="modal hidden">
-    <div class="modal-card">
-      <button class="modal-close" onclick="closeAddReel()">✕</button>
-      <h2>Добавить рилс</h2>
-      <p class="modal-sub">Вставь ссылку из Instagram — данные подтянутся автоматически</p>
-      <form id="add-form">
-        <label>Ссылка на рилс</label>
-        <input type="url" id="add-url" placeholder="https://www.instagram.com/reel/..." required>
-        <label>Описание (необязательно)</label>
-        <input type="text" id="add-caption" placeholder="Тренд недели 🔥">
-        <button type="submit" id="add-submit" class="btn btn-brand btn-block">Подтянуть данные</button>
-        <div id="add-loading" class="loading hidden">
-          <span class="spinner"></span>
-          <span>Подтягиваем данные из Instagram…</span>
-        </div>
-        <p id="add-error" class="error hidden"></p>
-      </form>
-    </div>
   </div>
 
   <script src="/app.js"></script>

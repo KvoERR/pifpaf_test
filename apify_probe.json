@@ -1,0 +1,10 @@
+{
+  "actor_id": "shu8hvrXbJbY3Eb9W",
+  "is_list": true,
+  "count": 1,
+  "first_keys": [
+    "error",
+    "errorDescription"
+  ],
+  "sample": "{'error': 'no_items', 'errorDescription': 'Empty or private data for provided input'}"
+}
