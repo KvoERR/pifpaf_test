@@ -1,0 +1,14 @@
+# Виртуальное окружение
+venv/
+
+# База данных
+data.db
+
+# Кэш Python
+__pycache__/
+*.pyc
+
+# Настройки редакторов / ОС
+.vscode/
+.DS_Store
+Thumbs.db
