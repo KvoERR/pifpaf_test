@@ -18,7 +18,6 @@
         <span class="logo-text"><span class="italic">PifPaf</span> <span class="brand">Creators</span></span>
       </a>
       <div class="nav-actions">
-        <a href="#feed" class="nav-link">Лента</a>
         <button class="btn btn-brand" onclick="showLogin()">Войти</button>
       </div>
     </nav>
@@ -29,7 +28,7 @@
         <p class="hero-sub">Личный кабинет для блоггеров PifPaf. Подтягивай просмотры, даты и обложки из Instagram автоматически — и следи за ростом в красивом дашборде.</p>
         <div class="hero-actions">
           <button class="btn btn-brand btn-lg" onclick="showLogin()">Начать бесплатно</button>
-          <a href="#feed" class="btn btn-ghost btn-lg">Смотреть ленту</a>
+          <a href="#account" class="btn btn-ghost btn-lg">Подтянуть аккаунт</a>
         </div>
         <div class="hero-badges">
           <span class="badge">⚡ Авто-обновление</span>
@@ -51,6 +50,23 @@
           <span class="views-chip">✨ 89K</span>
         </div>
       </div>
+    </section>
+
+    <!-- ===== ИМПОРТ АККАУНТА ПО ССЫЛКЕ (без входа) ===== -->
+    <section class="import" id="account">
+      <h2>Подтяни аккаунт по ссылке</h2>
+      <p class="section-sub">Вставь ссылку на Instagram-аккаунт — рилсы, просмотры, обложки и даты подтянутся автоматически через Apify</p>
+      <form id="import-form" class="import-form">
+        <input type="text" id="import-url" placeholder="https://www.instagram.com/handle/" required>
+        <button type="submit" class="btn btn-brand btn-lg">Подтянуть данные</button>
+      </form>
+      <div class="modal-sub hint">Быстрый пример: <button type="button" class="link-chip" onclick="demoImport()">anna (демо)</button></div>
+      <div id="import-loading" class="loading hidden">
+        <span class="spinner"></span>
+        <span>Подтягиваем рилсы из Instagram…</span>
+      </div>
+      <p id="import-error" class="error hidden"></p>
+      <div id="import-result" class="hidden"></div>
     </section>
 
     <section class="how" id="how">
@@ -76,12 +92,6 @@
           <p>Отслеживай динамику и понимай, какие рилсы залетают.</p>
         </div>
       </div>
-    </section>
-
-    <section class="feed" id="feed">
-      <h2>Лента блоггеров</h2>
-      <p class="section-sub">Кто сейчас в топе</p>
-      <div id="feed-grid" class="feed-grid"></div>
     </section>
 
     <footer class="footer">
@@ -200,7 +210,11 @@
         <input type="url" id="add-url" placeholder="https://www.instagram.com/reel/..." required>
         <label>Описание (необязательно)</label>
         <input type="text" id="add-caption" placeholder="Тренд недели 🔥">
-        <button type="submit" class="btn btn-brand btn-block">Подтянуть данные</button>
+        <button type="submit" id="add-submit" class="btn btn-brand btn-block">Подтянуть данные</button>
+        <div id="add-loading" class="loading hidden">
+          <span class="spinner"></span>
+          <span>Подтягиваем данные из Instagram…</span>
+        </div>
         <p id="add-error" class="error hidden"></p>
       </form>
     </div>

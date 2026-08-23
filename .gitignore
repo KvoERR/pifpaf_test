@@ -3,6 +3,8 @@ venv/
 
 # База данных
 data.db
+# Секреты
+.env
 
 # Кэш Python
 __pycache__/
