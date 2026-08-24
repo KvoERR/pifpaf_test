@@ -10,6 +10,9 @@ data.db
 __pycache__/
 *.pyc
 
+# Логи
+*.log
+
 # Настройки редакторов / ОС
 .vscode/
 .DS_Store

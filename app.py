@@ -586,6 +586,12 @@ def get_demo_account():
 
 
 # ---------- Статика + SPA fallback ----------
+@app.route('/health')
+def health():
+    """Healthcheck для платформ деплоя (Railway/Render/Fly)."""
+    return jsonify(status='ok')
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def spa(path):
@@ -599,4 +605,6 @@ def spa(path):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
     print(f'PifPaf Creators запущен на http://localhost:{port}')
-    app.run(host='127.0.0.1', port=port, debug=False)
+    # 0.0.0.0 обязателен в облаке (Railway/Render/Fly): иначе контейнер
+    # не примет внешние подключения. Локально тоже работает.
+    app.run(host='0.0.0.0', port=port, debug=False)
