@@ -54,10 +54,12 @@ function renderImported(acc, live) {
   const totalComments = reels.reduce((s, r) => s + (r.comments || 0), 0);
   const best = [...reels].sort((a, b) => (b.views || 0) - (a.views || 0))[0];
 
-  const cards = reels.map(r => `
+  // Все картинки теперь локальные (/img/reel/*, /img/avatar/*) —
+  // отдаются нашим сервером, внешние запросы не нужны.
+  const cards = reels.map((r, i) => `
     <div class="reel-card">
       <div class="reel-thumb">
-        <img src="${r.thumbnail}" alt="рилс" loading="lazy">
+        <img src="${r.thumbnail || '/img/reel/' + i}" alt="рилс" loading="lazy">
         <span class="reel-views">👁️ ${formatNumber(r.views)}</span>
       </div>
       <div class="reel-body">
@@ -73,12 +75,12 @@ function renderImported(acc, live) {
 
   const liveBadge = live
     ? '<span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e">⚡ Реальные данные Apify</span>'
-    : '<span class="badge">🧪 Демо-данные (токен Apify не задан)</span>';
+    : '<span class="badge">🧪 Демо-данные</span>';
 
   box.className = 'import-result';
   box.innerHTML = `
     <div class="account-top">
-      <img class="account-avatar" src="${acc.avatar}" alt="${acc.name}" onerror="this.style.visibility='hidden'">
+      <img class="account-avatar" src="${acc.avatar || '/img/avatar/' + encodeURIComponent(acc.handle || 'user')}" alt="${acc.name}">
       <div>
         <div class="account-name">${acc.name} <span class="account-ig">@${acc.handle}</span></div>
         <div class="account-bio">${acc.bio || ''}</div>
@@ -98,7 +100,7 @@ function renderImported(acc, live) {
       <div class="best-card">
         <h3>🏆 Лучший рилс</h3>
         <div class="best-reel">
-          <img src="${best.thumbnail}" alt="">
+          <img src="${best.thumbnail || '/img/reel/best'}" alt="">
           <div class="best-reel-info">
             <div class="best-views">${formatNumber(best.views)} просмотров</div>
             <div class="best-caption">${best.caption || ''}</div>

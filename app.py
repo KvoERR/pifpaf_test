@@ -21,6 +21,7 @@ PifPaf Creators — Flask-бэкенд (порт с Node.js server.js).
 import os
 import random
 import json
+import hashlib
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -60,19 +61,123 @@ def my_iso(value):
 
 
 def thumbnail_fallback(url):
-    """Заглушка-обложка, когда скрапер не отдал imageUrl (для демо)."""
-    seed = 0
-    for ch in url:
-        seed = (seed * 31 + ord(ch)) % 1000000
-    return f'https://picsum.photos/seed/{seed}/400/500'
+    """Заглушка-обложка рилса: рисуем сами, никаких внешних загрузок.
+
+    Детерминированно по url: один и тот же рилс всегда получает одну и ту же
+    картинку (цвет градиента зависит от сида).
+    """
+    return f'/img/reel/{thumbnail_fallback_stable(url)}'
+
+
+def thumbnail_fallback_stable(seed_text):
+    """Детерминированный короткий сид из произвольного текста."""
+    return hashlib.md5(str(seed_text).encode('utf-8')).hexdigest()[:12]
+
+
+# Палитры для генерируемых заглушек (обложки/аватары рисуем сами,
+# ничего не подгружаем из интернета).
+_PLACEHOLDER_PALETTES = [
+    ('#3479ff', '#a78bfa'),
+    ('#f472b6', '#fb923c'),
+    ('#10b981', '#34d399'),
+    ('#f59e0b', '#f97316'),
+    ('#8b5cf6', '#6366f1'),
+    ('#06b6d4', '#3b82f6'),
+]
+
+
+def _svg_reel_cover(seed_text):
+    """Рисует SVG-обложку рилса: градиент по сиду + кнопка play."""
+    digest = hashlib.md5(str(seed_text).encode('utf-8')).digest()
+    c1, c2 = _PLACEHOLDER_PALETTES[digest[0] % len(_PLACEHOLDER_PALETTES)]
+    angle = digest[1] % 360
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" '
+        'viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">'
+        '<defs><linearGradient id="g" gradientTransform="rotate(%d 0.5 0.5)">'
+        '<stop offset="0%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/>'
+        '</linearGradient></defs>'
+        '<rect width="400" height="500" fill="url(#g)"/>'
+        '<circle cx="330" cy="70" r="110" fill="rgba(255,255,255,0.14)"/>'
+        '<circle cx="60" cy="440" r="90" fill="rgba(255,255,255,0.10)"/>'
+        '<circle cx="200" cy="250" r="52" fill="rgba(15,23,42,0.35)"/>'
+        '<polygon points="185,225 235,250 185,275" fill="#ffffff"/>'
+        '</svg>'
+    ) % (angle, c1, c2)
+
+
+def _svg_avatar(seed_text):
+    """Рисует SVG-аватар: градиентный круг с первой буквой сида."""
+    digest = hashlib.md5(str(seed_text).encode('utf-8')).digest()
+    c1, c2 = _PLACEHOLDER_PALETTES[digest[2] % len(_PLACEHOLDER_PALETTES)]
+    letter = (str(seed_text).strip()[:1] or 'P').upper()
+    if not letter.isalnum():
+        letter = 'P'
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">'
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+        '<stop offset="0%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/>'
+        '</linearGradient></defs>'
+        '<rect width="150" height="150" fill="url(#g)"/>'
+        '<text x="75" y="97" font-family="Manrope,Arial,sans-serif" font-size="64" '
+        'font-weight="800" fill="#ffffff" text-anchor="middle">%s</text>'
+        '</svg>'
+    ) % (c1, c2, letter)
+
+
+# ---------- Настоящие фото на лендинге ----------
+# На главной оставляем реальные фотографии: сервер сам качает кадр
+# с loremflickr (этот сервис доступен из этой сети, в отличие от picsum/
+# unsplash) и отдаёт байты браузеру. Если скачать не удалось — тихо
+# подменяем на локальную SVG-заглушку, картинка никогда не «ломается».
+_LANDING_TOPICS = ['nature', 'travel', 'city', 'beach', 'mountains', 'sunset']
+_IMG_UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+           '(KHTML, like Gecko) Chrome/126.0 Safari/537.36')
+_PHOTO_CACHE = {}
+
+
+@app.route('/img/photo/<seed>')
+def img_photo_real(seed):
+    """Фотография для главной страницы: качаем сами, фолбэк — SVG."""
+    cached = _PHOTO_CACHE.get(seed)
+    if not cached:
+        digest = hashlib.md5(str(seed).encode('utf-8')).digest()
+        topic = _LANDING_TOPICS[digest[0] % len(_LANDING_TOPICS)]
+        lock = int.from_bytes(digest[1:4], 'big') % 9999
+        url = f'https://loremflickr.com/600/760/{topic}?lock={lock}'
+        data = b''
+        ctype = 'image/jpeg'
+        ok_img = False
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': _IMG_UA})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = resp.read(10 * 1024 * 1024)
+                ctype = resp.headers.get('Content-Type', 'image/jpeg').split(';')[0]
+                ok_img = bool(data) and (data[:2] == b'\xff\xd8' or 'image' in ctype)
+        except Exception:
+            ok_img = False
+        if not ok_img:
+            # Не скачалось — SVG-заглушка, чтобы главная всегда была красивой.
+            resp = app.response_class(_svg_reel_cover(seed),
+                                      mimetype='image/svg+xml')
+            resp.headers['Cache-Control'] = 'public, max-age=300'
+            return resp
+        if len(_PHOTO_CACHE) > 40:
+            _PHOTO_CACHE.clear()
+        _PHOTO_CACHE[seed] = (data, ctype)
+    else:
+        data, ctype = cached
+    resp = app.response_class(data, mimetype=ctype)
+    resp.headers['Cache-Control'] = 'public, max-age=86400'
+    return resp
 
 
 # ---------- Конфигурация Apify ----------
 # Ключ API берётся из переменной окружения APIFY_TOKEN.
 # Если его нет — данные имитируются, чтобы демо работало офлайн.
 APIFY_TOKEN = os.environ.get('APIFY_TOKEN', '').strip()
-# Какой актор использовать: apify/instagram-scraper (нужен логин/пароль в input)
-# или любой другой совместимый публичный скрапер Instagram/Reels.
+# Какой актор использовать: apify/instagram-scraper (вход через directUrls,
+# без логина) или любой другой совместимый публичный скрапер Instagram/Reels.
 APIFY_ACTOR_ID = os.environ.get('APIFY_ACTOR_ID', 'apify/instagram-scraper').strip()
 # Запас активных исполнителей, который мы готовы тратить на один запрос (cents).
 # Для бесплатного плана ставьте 10–15 кр.
@@ -144,7 +249,7 @@ def parse_apify_item(item, url=''):
         caption = item['caption2']
     caption = caption or 'Новый рилс'
 
-    views = num('views', 'playCount', 'play_count')
+    views = num('views', 'playCount', 'play_count', 'videoViewCount', 'viewCount')
     likes = num('likes', 'likesCount', 'likeCount')
     comments = num('comments', 'commentsCount', 'commentCount')
 
@@ -172,7 +277,7 @@ def parse_apify_item(item, url=''):
         'views': views,
         'likes': likes,
         'comments': comments,
-        'thumbnail': thumbnail or thumbnail_fallback(url),
+        'thumbnail': thumbnail_fallback(url),
         'posted_at': my_iso(posted_at),
     }
 
@@ -217,31 +322,43 @@ def _apify_fetch(url):
 
 
 def _apify_fetch_profile(handle):
-    """Тянет профиль аккаунта + его посты/рилсы через Apify.
+    """Тянет посты/рилсы аккаунта через Apify.
 
     handle: юзернейм без @  (например 'anna.smirnova')
+
+    ВАЖНО: у актуального apify/instagram-scraper НЕТ поля 'usernames' во входной
+    схеме — адрес задаётся только через directUrls. С 'usernames' актор не находит
+    ни одной ссылки и отвечает {'error': 'no_items'}, из-за чего приложение
+    молча уходило в демо-режим.
     """
     return _apify_run({
-        'usernames': [handle],
+        'directUrls': [f'https://www.instagram.com/{handle}/'],
         'resultsType': 'posts',
         'resultsLimit': 15,
-        'postsLimit': 15,
     })
 
 
-def thumbnail_fallback_stable(seed_text):
-    seed = 0
-    for ch in str(seed_text):
-        seed = (seed * 31 + ord(ch)) % 1000000
-    return f'https://picsum.photos/seed/{seed}/400/500'
+def _apify_fetch_details(handle):
+    """Тянет метаданные профиля (аватар, био, имя, подписчики) через Apify."""
+    return _apify_run({
+        'directUrls': [f'https://www.instagram.com/{handle}/'],
+        'resultsType': 'details',
+        'resultsLimit': 1,
+    })
+
+
+# ---------- Картинки-обложки (реальные фото) ----------
 
 
 def parse_profile(items):
     """Разбирает ответ Apify на импорт аккаунта.
 
-    Ожидаем список item'ов: первый — профиль, в остальных лежат посты (поля
-    'posts' или 'items'). Возвращает dict:
-      { username, name, avatar, bio, followers, url, reels: [...] }
+    Ожидаем список item'ов с постами (resultsType='posts') либо первый item
+    с деталями профиля (resultsType='details'). Поля актуального
+    instagram-scraper: type/productType, videoViewCount, likesCount,
+    commentsCount, displayUrl, timestamp, shortCode, ownerUsername.
+    Возвращает dict:
+      { handle, name, avatar, bio, url, reels: [...] }
     Если данных нет — None.
     """
     if not isinstance(items, list) or not items:
@@ -253,18 +370,42 @@ def parse_profile(items):
 
     meta = first.get('item') if isinstance(first.get('item'), dict) else first
 
-    # Профиль-поля
-    profile = first.get('profile') if isinstance(first.get('profile'), dict) else first
-    handle = (profile or {}).get('username') or meta.get('username') or ''
-    name = (profile or {}).get('fullName') or meta.get('fullName') or handle or 'Аккаунт'
-    avatar = (profile or {}).get('picurl') or meta.get('profilePicUrl') or meta.get('avatar') or ''
-    bio = (profile or {}).get('bio') or meta.get('bio') or ''
+    # Профиль-поля: у instagram-scraper имя/юзернейм приходят из details-item
+    # (username/fullName) либо из полей ownerUsername/ownerFullName постов.
+    profile = first.get('profile') if isinstance(first.get('profile'), dict) else {}
+
+    def _first(*vals):
+        for v in vals:
+            if v:
+                return v
+        return ''
+
+    handle = _first(
+        profile.get('username'),
+        first.get('username'), meta.get('username'),
+        first.get('ownerUsername'), meta.get('ownerUsername'),
+    )
+    name = _first(
+        profile.get('fullName'),
+        first.get('fullName'), meta.get('fullName'),
+        first.get('ownerFullName'), meta.get('ownerFullName'),
+        handle, 'Аккаунт',
+    )
+    bio = _first(
+        profile.get('bio'), profile.get('biography'),
+        meta.get('bio'), meta.get('biography'),
+    )
     insta_url = f'https://www.instagram.com/{handle}' if handle else ''
+    # Аватар — всегда локальная SVG-заглушка: внешние картинки не подгружаем.
+    avatar = f'/img/avatar/{handle or "user"}'
 
     posts = []
     for it in items:
         it_meta = it.get('item') if isinstance(it.get('item'), dict) else it
-        if it_meta.get('type') == 'Video' or it_meta.get('is_video') or it_meta.get('mediaType') == 2:
+        if it_meta.get('error'):
+            continue  # элемент-заглушка с ошибкой актора
+        if (it_meta.get('type') == 'Video' or it_meta.get('is_video')
+                or it_meta.get('mediaType') == 2 or it_meta.get('productType') == 'clips'):
             posts.append(it_meta)
         else:
             # у некоторых акторов посты живут в it.posts / it.itemsPosts
@@ -275,12 +416,15 @@ def parse_profile(items):
     reels = []
     for p in posts:
         inner = p.get('item') if isinstance(p.get('item'), dict) else p
-        r = parse_apify_item(p, insta_url)
+        r_url = p.get('url') or p.get('shortCode') or inner.get('url') or ''
+        # В генератор заглушки передаём уникальный url рилса, а не общий
+        # профильный — иначе все обложки-плейсхолдеры будут одинаковыми.
+        seed_url = r_url or insta_url
+        r = parse_apify_item(p, seed_url)
         if r is None:
             # Пытаемся из вложенного item
-            r = parse_apify_item(inner, insta_url)
+            r = parse_apify_item(inner, seed_url)
         if r:
-            r_url = p.get('url') or p.get('shortCode') or inner.get('url') or ''
             r['url'] = r_url
             reels.append(r)
 
@@ -295,6 +439,44 @@ def parse_profile(items):
         'url': insta_url,
         'reels': reels,
     }
+
+
+def apply_profile_details(account, det_item):
+    """Дополняет аккаунт метаданными из details-ответа Apify (best-effort).
+
+    Картинки не трогаем: аватар остаётся локальной заглушкой /img/avatar/.
+    """
+    if not isinstance(account, dict) or not isinstance(det_item, dict):
+        return
+    if det_item.get('username'):
+        account['handle'] = det_item['username']
+    if det_item.get('fullName'):
+        account['name'] = det_item['fullName']
+    account['avatar'] = f"/img/avatar/{account.get('handle') or 'user'}"
+    bio_txt = det_item.get('biography') or det_item.get('bio')
+    if bio_txt:
+        account['bio'] = bio_txt
+    if det_item.get('url'):
+        account['url'] = det_item['url']
+    followers = det_item.get('followersCount')
+    if isinstance(followers, (int, float)):
+        account['followers'] = int(followers)
+
+
+@app.route('/img/reel/<seed>')
+def img_reel_cover(seed):
+    """SVG-обложка рилса по сиду — рисуем сами, без внешних запросов."""
+    resp = app.response_class(_svg_reel_cover(seed), mimetype='image/svg+xml')
+    resp.headers['Cache-Control'] = 'public, max-age=604800'
+    return resp
+
+
+@app.route('/img/avatar/<seed>')
+def img_avatar(seed):
+    """SVG-аватар по сиду."""
+    resp = app.response_class(_svg_avatar(seed), mimetype='image/svg+xml')
+    resp.headers['Cache-Control'] = 'public, max-age=604800'
+    return resp
 
 
 # ---------- Хелперы / middleware ----------
@@ -347,14 +529,14 @@ def demo_account(handle='demo_creator'):
             'views': views,
             'likes': int(views * 0.07),
             'comments': int(views * 0.003),
-            'thumbnail': thumbnail_fallback_stable(f'{handle}-{i}'),
+            'thumbnail': thumbnail_fallback(f'{handle}-{i}'),
             'posted_at': (datetime.now(timezone.utc) - timedelta(days=i * 4)).strftime('%Y-%m-%dT%H:%M:%S') + 'Z',
             'url': f'https://www.instagram.com/reel/demo{i}/',
         })
     return {
         'handle': handle or 'demo_creator',
         'name': name,
-        'avatar': f'https://i.pravatar.cc/150?img={random.randint(10, 60)}',
+        'avatar': f'/img/avatar/{handle or "demo_creator"}',
         'bio': 'Креатор · снимаю тренды',
         'url': f'https://www.instagram.com/{handle or "demo_creator"}',
         'reels': reels,
@@ -374,12 +556,22 @@ def import_account():
     account = None
     live = False
     if APIFY_TOKEN:
-        items = _apify_fetch_profile(handle)
+        raw_items = _apify_fetch_profile(handle)
+        items = [i for i in (raw_items or []) if isinstance(i, dict) and not i.get('error')]
         account = parse_profile(items) if items else None
         if account:
             live = True
+            # Аватар/био/имя живут в details — тянем вторым коротким запросом
+            # (best-effort: без него аккаунт всё равно собирается из постов).
+            det = _apify_fetch_details(handle) or []
+            det_item = next((d for d in det if isinstance(d, dict) and not d.get('error')), None)
+            apply_profile_details(account, det_item)
         else:
-            print('[Apify] Профиль не найден или пустой. Использую демо-режим.')
+            errors = [i.get('errorDescription') or i.get('error')
+                      for i in (raw_items or [])
+                      if isinstance(i, dict) and i.get('error')]
+            why = '; '.join(dict.fromkeys(errors)) if errors else 'актор вернул пустой датасет'
+            print(f'[Apify] Профиль не получен ({why}). Использую демо-режим.')
 
     if account is None:
         # Демо-режим (нет токена / скрапер вернул пусто)
